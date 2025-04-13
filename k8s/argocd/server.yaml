@@ -37,12 +37,12 @@ spec:
             - --insecure
           env:
             - name: ARGOCD_SERVER_INSECURE
-              value: "true" # 開発環境では true, 本番環境では false
+              value: "true"
             - name: REDIS_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: argocd-redis-initial-password
-                  key: admin.password
+                  name: argocd-redis
+                  key: redis.password
           ports:
             - containerPort: 8080
           readinessProbe: &probe
