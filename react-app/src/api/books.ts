@@ -1,7 +1,8 @@
 import axios from "axios";
 import { Book } from "../types/book";
 
-const API_URL = process.env.REACT_APP_API_URL || "http://localhost:8080";
+// Kubernetes環境では、サービス名で接続
+const API_URL = process.env.REACT_APP_API_URL || "http://golang-app:8080";
 
 export const getBooks = async (): Promise<Book[]> => {
   const response = await axios.get<Book[]>(`${API_URL}/books`);

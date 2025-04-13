@@ -18,6 +18,12 @@ spec:
         - name: react-app
           image: react-app:v1
           imagePullPolicy: Never
+          env:
+            - name: REACT_APP_API_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: frontend-config
+                  key: api_url
           ports:
             - containerPort: 80
           readinessProbe:
