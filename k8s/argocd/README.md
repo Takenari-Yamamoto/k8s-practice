@@ -33,32 +33,44 @@ kubectl apply -f server.yaml
 
 ### 4. アクセス方法
 
-#### ポートフォワーディングを使用する場合
+#### ポートフォワーディングを使用する場合（推奨）
 
 ```bash
-# ポートフォワーディングを設定（バックグラウンドで実行）
+# HTTPSでアクセスする場合（8080ポート）
 kubectl port-forward svc/argocd-server -n argocd 8080:443
-```
 
-その後、以下の URL でアクセス：
-
-- http://localhost:8080
-
-#### NodePort を使用する場合
-
-```bash
-# NodePortを確認
-kubectl get svc argocd-server -n argocd
-
-# 出力例:
-# NAME            TYPE       CLUSTER-IP     EXTERNAL-IP   PORT(S)                      AGE
-# argocd-server   NodePort   10.x.x.x      <none>        80:32xxx/TCP,443:32xxx/TCP   1m
+# HTTPでアクセスする場合（9000ポート）
+kubectl port-forward svc/argocd-server -n argocd 9000:80
 ```
 
 その後、以下のいずれかの URL でアクセス：
 
-- http://localhost:[HTTP NodePort]
-- https://localhost:[HTTPS NodePort]
+- HTTPS: https://localhost:8080 （自己署名証明書の警告が表示されます）
+- HTTP: http://localhost:9000
+
+※ HTTPS アクセスの場合、自己署名証明書の警告が表示されますが、開発環境では「詳細設定」から「安全でないサイトにアクセスする」を選択して進めることができます。
+
+#### NodePort を使用する場合
+
+```bash
+# NodePortとminikubeのIPアドレスを確認
+kubectl get svc argocd-server -n argocd
+minikube ip
+
+# 出力例:
+# NAME            TYPE       CLUSTER-IP     EXTERNAL-IP   PORT(S)                      AGE
+# argocd-server   NodePort   10.x.x.x      <none>        80:31181/TCP,443:30692/TCP   1m
+#
+# minikube ip の出力例:
+# 192.168.49.2
+```
+
+その後、以下のいずれかの URL でアクセス：
+
+- HTTP: http://[minikube-ip]:[HTTP NodePort]
+  例: http://192.168.49.2:31181
+- HTTPS: https://[minikube-ip]:[HTTPS NodePort]
+  例: https://192.168.49.2:30692
 
 ### 5. ログイン情報
 
