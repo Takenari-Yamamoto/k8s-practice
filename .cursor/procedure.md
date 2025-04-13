@@ -45,5 +45,3 @@
 - Minikube での docker-env 設定は必須
 - アプリケーションへのアクセスは NodePort を使用
 - コンテナのビルドは Minikube 環境内で実行すること
-
-
