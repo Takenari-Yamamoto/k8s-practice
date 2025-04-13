@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: react-app
-          image: react-app:v2
+          image: react-app:v1
           imagePullPolicy: Never
           env:
             - name: REACT_APP_API_URL

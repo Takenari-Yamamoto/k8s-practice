@@ -9,38 +9,53 @@ kind: Deployment
 metadata:
   name: argocd-server
   namespace: argocd
+  labels:
+    app.kubernetes.io/component: server
+    app.kubernetes.io/name: argocd-server
+    app.kubernetes.io/part-of: argocd
 spec:
   selector:
     matchLabels:
-      app: argocd-server
+      app.kubernetes.io/name: argocd-server
   template:
     metadata:
       labels:
-        app: argocd-server
+        app.kubernetes.io/name: argocd-server
     spec:
       serviceAccountName: argocd-server
       containers:
         - name: argocd-server
-          image: quay.io/argoproj/argocd:v2.9.3
+          image: quay.io/argoproj/argocd:v2.14.6
           args:
             - /usr/local/bin/argocd-server
-            - --insecure
             - --staticassets
             - /shared/app
+            - --insecure
+          env:
+            - name: ARGOCD_SERVER_INSECURE
+              value: "true" # 開発環境では true, 本番環境では false
           ports:
             - containerPort: 8080
-          readinessProbe:
+          readinessProbe: &probe
             httpGet:
               path: /healthz
               port: 8080
             initialDelaySeconds: 3
             periodSeconds: 30
-          livenessProbe:
-            httpGet:
-              path: /healthz
-              port: 8080
-            initialDelaySeconds: 3
-            periodSeconds: 30
+          livenessProbe: *probe
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+          volumeMounts:
+            - mountPath: /tmp
+              name: tmp
+      volumes:
+        - emptyDir: {}
+          name: tmp
 ---
 apiVersion: v1
 kind: Service
@@ -48,10 +63,10 @@ metadata:
   name: argocd-server
   namespace: argocd
 spec:
-  type: LoadBalancer
+  type: NodePort # 開発環境ではNodePort, 本番環境ではLoadBalancer
   ports:
     - name: http
       port: 8080
       targetPort: 8080
   selector:
-    app: argocd-server
+    app.kubernetes.io/name: argocd-server
