@@ -8,6 +8,21 @@ import (
 	"os"
 )
 
+func enableCORS(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+
+		if r.Method == "OPTIONS" {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+
+		next(w, r)
+	}
+}
+
 type Book struct {
 	ID     string `json:"id"`
 	Title  string `json:"title"`
@@ -37,10 +52,10 @@ func main() {
 		fmt.Fprintf(w, "OK")
 	})
 
-	http.HandleFunc("/books", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/books", enableCORS(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(books)
-	})
+	}))
 
 	log.Printf("Server starting on port %s", port)
 	if err := http.ListenAndServe(":"+port, nil); err != nil {
