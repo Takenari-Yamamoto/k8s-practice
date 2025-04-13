@@ -3,6 +3,10 @@ kind: ServiceAccount
 metadata:
   name: argocd-server
   namespace: argocd
+  labels:
+    app.kubernetes.io/component: server
+    app.kubernetes.io/name: argocd-server
+    app.kubernetes.io/part-of: argocd
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -62,11 +66,20 @@ kind: Service
 metadata:
   name: argocd-server
   namespace: argocd
+  labels:
+    app.kubernetes.io/component: server
+    app.kubernetes.io/name: argocd-server
+    app.kubernetes.io/part-of: argocd
 spec:
-  type: NodePort # 開発環境ではNodePort, 本番環境ではLoadBalancer
+  type: NodePort
   ports:
     - name: http
-      port: 8080
+      port: 80
       targetPort: 8080
+      protocol: TCP
+    - name: https
+      port: 443
+      targetPort: 8080
+      protocol: TCP
   selector:
     app.kubernetes.io/name: argocd-server

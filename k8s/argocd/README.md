@@ -1,39 +1,128 @@
-# ArgoCD Setup
+# ArgoCD Setup Guide
 
-## ローカル環境での起動方法
+## 前提条件
 
-1. ArgoCD をインストール:
+- minikube
+- kubectl
+- argocd CLI (オプション)
+
+## セットアップ手順
+
+### 1. minikube の起動
 
 ```bash
+minikube start
+```
+
+### 2. ArgoCD のインストール
+
+```bash
+# ArgoCDの名前空間を作成
+kubectl create namespace argocd
+
+# ArgoCDをインストール
 kubectl apply -f install.yaml
 ```
 
-2. アプリケーションの定義を適用:
+### 3. サーバー設定の適用
 
 ```bash
-# GitHubリポジトリのURLを更新後に実行
-kubectl apply -f applications.yaml
+# ArgoCDサーバーの設定を適用
+kubectl apply -f server.yaml
 ```
 
-3. ArgoCD の UI にアクセス:
+### 4. アクセス方法
 
-- URL: http://localhost:31181
+#### ポートフォワーディングを使用する場合
 
-## 初期設定
+```bash
+# ポートフォワーディングを設定（バックグラウンドで実行）
+kubectl port-forward svc/argocd-server -n argocd 8080:443
+```
 
-1. 初期管理者パスワードの取得:
+その後、以下の URL でアクセス：
+
+- http://localhost:8080
+
+#### NodePort を使用する場合
+
+```bash
+# NodePortを確認
+kubectl get svc argocd-server -n argocd
+
+# 出力例:
+# NAME            TYPE       CLUSTER-IP     EXTERNAL-IP   PORT(S)                      AGE
+# argocd-server   NodePort   10.x.x.x      <none>        80:32xxx/TCP,443:32xxx/TCP   1m
+```
+
+その後、以下のいずれかの URL でアクセス：
+
+- http://localhost:[HTTP NodePort]
+- https://localhost:[HTTPS NodePort]
+
+### 5. ログイン情報
+
+- ユーザー名: `admin`
+- パスワード: 以下のコマンドで取得
 
 ```bash
 kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d
 ```
 
-2. ログイン情報:
+## アプリケーションのデプロイ
 
-- ユーザー名: admin
-- パスワード: 上記コマンドで取得したパスワード
+### CLI を使用する場合
 
-## 注意事項
+```bash
+# CLIでログイン
+argocd login localhost:8080
 
-- `applications.yaml`内の GitHub リポジトリ URL を、実際のリポジトリ URL に更新してください。
-- 初回ログイン後は、セキュリティのためパスワードを変更することを推奨します。
-- ArgoCD は自動的に Git リポジトリの変更を検知し、Kubernetes クラスターに反映します。
+# アプリケーションの作成
+argocd app create [APP_NAME] \
+  --repo [GIT_REPO_URL] \
+  --path [MANIFEST_PATH] \
+  --dest-server https://kubernetes.default.svc \
+  --dest-namespace default
+
+# アプリケーションの同期
+argocd app sync [APP_NAME]
+```
+
+### UI を使用する場合
+
+1. ArgoCD の UI にアクセス
+2. 「NEW APP」ボタンをクリック
+3. アプリケーション情報を入力
+   - Application Name: アプリケーション名
+   - Project: default
+   - Repository URL: Git リポジトリの URL
+   - Path: マニフェストファイルのパス
+   - Destination: https://kubernetes.default.svc
+   - Namespace: デプロイ先の名前空間
+
+## トラブルシューティング
+
+### 証明書の警告が表示される場合
+
+開発環境では自己署名証明書を使用しているため、ブラウザで警告が表示されます。
+「詳細設定」から「安全でないサイトにアクセスする」を選択してください。
+
+### イメージのプル失敗
+
+ローカルで作成したイメージを使用する場合は、以下のコマンドで minikube にイメージをロードする必要があります：
+
+```bash
+minikube image load [IMAGE_NAME]:[TAG]
+```
+
+### Pod が起動しない場合
+
+以下のコマンドで Pod の状態とログを確認できます：
+
+```bash
+# Podの状態確認
+kubectl get pods -n argocd
+
+# Podのログ確認
+kubectl logs -n argocd [POD_NAME]
+```
