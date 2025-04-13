@@ -25,8 +25,8 @@ spec:
             - name: REDIS_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: argocd-redis
-                  key: redis.password
+                  name: argocd-redis-initial-password
+                  key: admin.password
           ports:
             - containerPort: 8082
           readinessProbe:
